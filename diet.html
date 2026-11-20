@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Diet Planner - ElderSOS{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto;">
+  <!-- Header Bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--color-text-main); margin-bottom: 4px;">
+        🥗 Daily Senior Nutrition Plan
+      </h1>
+      <p style="font-size: 1.15rem; color: var(--color-text-muted);">
+        Tailored for: <strong>{{ current_user.name }}</strong> (Age: {{ current_user.age or 'Senior' }} | Diet: {{ plan.diet_type }})
+        &bull; Date: <strong>{{ plan_date }}</strong>
+      </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <form method="POST" action="{{ url_for('diet.generate') }}" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary" style="padding: 12px 20px;">
+          🔄 Regenerate Plan
+        </button>
+      </form>
+      <a href="{{ url_for('profile.index') }}" class="btn btn-secondary" style="padding: 12px 20px;">
+        ⚙️ Edit Diet & Allergies
+      </a>
+      <a href="{{ url_for('diet.history') }}" class="btn btn-secondary" style="padding: 12px 18px;">
+        📜 Plan History
+      </a>
+    </div>
+  </div>
+
+  <!-- Medical & Condition Notices -->
+  {% if plan.condition_notice %}
+    <div class="alert-banner warning" style="border-width: 3px; font-size: 1.1rem; line-height: 1.6;">
+      <div>
+        <strong>⚕️ Medical Condition Notice:</strong> {{ plan.condition_notice }}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if plan.clinician_note %}
+    <div class="alert-banner info" style="border-width: 2px; font-size: 1.05rem;">
+      <div>
+        <strong>👨‍⚕️ Clinician Prescribed Note:</strong> {{ plan.clinician_note }}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Total Nutrition Summary Ribbon -->
+  {% if plan.nutrition_totals %}
+    <div class="card" style="background: linear-gradient(135deg, #0b69a3 0%, #074b75 100%); color: #ffffff; padding: 20px 24px; margin-bottom: 28px;">
+      <div style="font-size: 1.1rem; font-weight: 700; opacity: 0.9; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+        📊 Estimated Daily Nutrition Balance
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px; text-align: center;">
+        <div style="background: rgba(255,255,255,0.12); padding: 12px; border-radius: 10px;">
+          <div style="font-size: 1.8rem; font-weight: 900;">{{ plan.nutrition_totals.calories }}</div>
+          <div style="font-size: 0.95rem; opacity: 0.85;">Total Calories</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.12); padding: 12px; border-radius: 10px;">
+          <div style="font-size: 1.8rem; font-weight: 900;">{{ plan.nutrition_totals.protein_g }}g</div>
+          <div style="font-size: 0.95rem; opacity: 0.85;">Protein (Muscle)</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.12); padding: 12px; border-radius: 10px;">
+          <div style="font-size: 1.8rem; font-weight: 900;">{{ plan.nutrition_totals.fiber_g }}g</div>
+          <div style="font-size: 0.95rem; opacity: 0.85;">Dietary Fiber</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.12); padding: 12px; border-radius: 10px;">
+          <div style="font-size: 1.8rem; font-weight: 900;">{{ plan.nutrition_totals.carbs_g }}g</div>
+          <div style="font-size: 0.95rem; opacity: 0.85;">Carbohydrates</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.12); padding: 12px; border-radius: 10px;">
+          <div style="font-size: 1.8rem; font-weight: 900;">{{ plan.nutrition_totals.fat_g }}g</div>
+          <div style="font-size: 0.95rem; opacity: 0.85;">Healthy Fats</div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- 4 Meals Grid -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    {% set meal_slots = [
+      ('breakfast', '🌅 Breakfast (8:00 AM - 9:30 AM)', plan.meals.breakfast),
+      ('lunch', '☀️ Lunch (12:30 PM - 2:00 PM)', plan.meals.lunch),
+      ('evening_snacks', '🍵 Evening Snack & Hydration (4:30 PM - 5:30 PM)', plan.meals.evening_snacks),
+      ('dinner', '🌙 Light Dinner (7:30 PM - 8:30 PM)', plan.meals.dinner)
+    ] %}
+
+    {% for key, slot_title, meal in meal_slots %}
+      {% if meal %}
+        <div class="card" style="border: 2px solid var(--color-border); padding: 24px;">
+          <!-- Slot Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--color-border-subtle); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--color-primary); margin: 0;">
+              {{ slot_title }}
+            </h2>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              {% if meal.diet_type == 'vegan' %}
+                <span style="background: #dcfce7; color: #166534; font-weight: 800; font-size: 0.85rem; padding: 4px 10px; border-radius: 6px;">VEGAN 🌱</span>
+              {% elif meal.diet_type == 'veg' %}
+                <span style="background: #e0f2fe; color: #075985; font-weight: 800; font-size: 0.85rem; padding: 4px 10px; border-radius: 6px;">VEGETARIAN 🟢</span>
+              {% else %}
+                <span style="background: #fee2e2; color: #991b1b; font-weight: 800; font-size: 0.85rem; padding: 4px 10px; border-radius: 6px;">NON-VEG 🍗</span>
+              {% endif %}
+
+              {% if meal.soft_texture %}
+                <span style="background: #fef3c7; color: #92400e; font-weight: 700; font-size: 0.85rem; padding: 4px 10px; border-radius: 6px;" title="Soft texture suitable for senior chewing">
+                  🦷 Easy to Chew
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Meal Title -->
+          <div style="margin-bottom: 14px;">
+            <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--color-text-main); margin-bottom: 4px;">
+              {{ meal.name }}
+            </h3>
+            {% if meal.hindi_name %}
+              <div style="font-size: 1.15rem; color: #64748b; font-weight: 600;">
+                {{ meal.hindi_name }}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Portion & Ingredients -->
+          <div style="background-color: #f8fafc; padding: 14px 18px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--color-border-subtle); font-size: 1.05rem;">
+            <div>
+              🍽️ <strong>Portion Recommendation:</strong> {{ meal.portion_size }}
+            </div>
+            <div style="margin-top: 8px;">
+              🥣 <strong>Ingredients:</strong> {{ meal.ingredients | join(', ') }}
+            </div>
+          </div>
+
+          <!-- Health Note -->
+          {% if meal.health_notes %}
+            <div style="margin-bottom: 14px; font-size: 1.05rem; color: #0f5132; background-color: #d1e7dd; padding: 10px 14px; border-radius: 6px;">
+              💡 <strong>Senior Health Benefit:</strong> {{ meal.health_notes }}
+            </div>
+          {% endif %}
+
+          <!-- Nutrition Pill Strip -->
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 0.95rem; font-weight: 700;">
+            <span style="background: #e2e8f0; padding: 6px 12px; border-radius: 20px;">🔥 {{ meal.calories }} kcal</span>
+            <span style="background: #e2e8f0; padding: 6px 12px; border-radius: 20px;">💪 {{ meal.protein_g }}g Protein</span>
+            <span style="background: #e2e8f0; padding: 6px 12px; border-radius: 20px;">🌾 {{ meal.fiber_g }}g Fiber</span>
+            <span style="background: #e2e8f0; padding: 6px 12px; border-radius: 20px;">🍞 {{ meal.carbs_g }}g Carbs</span>
+            <span style="background: #e2e8f0; padding: 6px 12px; border-radius: 20px;">🥑 {{ meal.fat_g }}g Fat</span>
+            <span style="background: #e2e8f0; padding: 6px 12px; border-radius: 20px;">🧂 {{ meal.sodium_level | capitalize }} Sodium</span>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- Medical Disclaimer Banner at bottom of diet page -->
+  <div class="card" style="margin-top: 30px; background-color: #fffbeb; border: 2px solid #fef3c7;">
+    <h3 style="font-size: 1.15rem; font-weight: 800; color: #92400e; margin-bottom: 6px;">
+      ⚖️ Dietary Advice Transparency Notice
+    </h3>
+    <p style="font-size: 0.98rem; color: #78350f; line-height: 1.6;">
+      {{ plan.medical_disclaimer }}
+    </p>
+  </div>
+</div>
+{% endblock %}

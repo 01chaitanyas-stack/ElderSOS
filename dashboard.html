@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ElderSOS{% endblock %}
+
+{% block content %}
+<div style="max-width: 1050px; margin: 0 auto;">
+  <!-- Welcome Greeting & Senior Header -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+    <div>
+      <h1 style="font-size: 2.3rem; font-weight: 900; color: var(--color-text-main); margin-bottom: 4px;">
+        Namaste, {{ current_user.name }} 🙏
+      </h1>
+      <p style="font-size: 1.15rem; color: var(--color-text-muted);">
+        {% if current_user.age %}Age {{ current_user.age }} &bull; {% endif %}Your emergency assistance and daily wellness companion.
+      </p>
+    </div>
+
+    <!-- Mode & Status Indicator -->
+    <div>
+      {% if ALERT_MODE == 'test' %}
+        <span class="mode-badge test" style="font-size: 0.95rem; padding: 6px 14px;">
+          🧪 SYSTEM IN SAFE TEST MODE
+        </span>
+      {% else %}
+        <span class="mode-badge live" style="font-size: 0.95rem; padding: 6px 14px;">
+          🟢 SYSTEM IN LIVE DISPATCH MODE
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 1. GIANT EMERGENCY SOS HERO SECTION -->
+  <div class="sos-hero-card">
+    <div style="font-size: 1.25rem; font-weight: 800; color: var(--color-emergency); letter-spacing: 0.05em; text-transform: uppercase;">
+      🚨 Immediate Emergency Assistance
+    </div>
+    
+    <button id="sos-trigger-btn" class="sos-trigger-btn" type="button" aria-label="Trigger Emergency SOS Alert">
+      <span class="sos-icon" aria-hidden="true">🆘</span>
+      <span>SOS</span>
+      <span class="sos-subtext">Press for Help</span>
+    </button>
+
+    <p style="font-size: 1.15rem; font-weight: 700; color: var(--color-text-main); margin-top: 14px;">
+      Tapping starts a 5-second countdown to prevent accidental alerts.
+    </p>
+
+    <!-- Quick Direct Helpline -->
+    <div style="display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap;">
+      <a href="tel:112" class="btn btn-outline-emergency" style="font-size: 1.15rem; font-weight: 800;">
+        🚨 Call 112 Directly (Police / Ambulance)
+      </a>
+      {% if primary_contact %}
+        <a href="tel:{{ primary_contact.phone }}" class="btn btn-success" style="font-size: 1.15rem; font-weight: 800;">
+          📞 Call {{ primary_contact.name }} ({{ primary_contact.phone }})
+        </a>
+      {% endif %}
+    </div>
+
+    <div id="sos-status-feedback" style="display: none; font-size: 1.2rem; font-weight: 800; color: var(--color-emergency); margin-top: 16px;">
+      Acquiring GPS location and sending emergency alerts...
+    </div>
+  </div>
+
+  <!-- Dynamic SOS Results Card (Appears if SOS pressed on dashboard) -->
+  <div id="sos-results-card" class="card" style="display: none; border-width: 3px;">
+    <h2 class="card-title" style="font-size: 1.5rem;">
+      📡 Emergency Alert Dispatch Results
+    </h2>
+    <div id="sos-results-content"></div>
+  </div>
+
+  <!-- 2. TWO-COLUMN GRID: DIET PLANNER & HYDRATION / CONTACTS -->
+  <div class="grid-2" style="align-items: stretch; margin-bottom: 24px;">
+    
+    <!-- LEFT: TODAY'S MEAL & DIET PREVIEW -->
+    <div class="card" style="display: flex; flex-direction: column;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 2px solid var(--color-border-subtle); padding-bottom: 10px;">
+        <h2 class="card-title" style="margin: 0; font-size: 1.45rem;">
+          🥗 Today's Meal Plan
+        </h2>
+        <a href="{{ url_for('diet.index') }}" class="btn btn-secondary" style="font-size: 0.95rem; padding: 6px 14px; min-height: 40px;">
+          View Full Menu ➔
+        </a>
+      </div>
+
+      {% if today_plan %}
+        {% set plan_dict = today_plan.get_plan_data() %}
+        <div style="flex: 1;">
+          <p style="font-size: 1.05rem; color: var(--color-text-muted); margin-bottom: 12px;">
+            Balanced meals curated for {{ current_user.name }} ({{ plan_dict.diet_type }}):
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% if plan_dict.meals and plan_dict.meals.breakfast %}
+              <div style="padding: 10px 14px; background: #f8fafc; border-radius: 8px; border-left: 4px solid var(--color-primary);">
+                <div style="font-size: 0.9rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">🌅 Breakfast</div>
+                <div style="font-size: 1.15rem; font-weight: 800;">{{ plan_dict.meals.breakfast.name }}</div>
+                <div style="font-size: 0.95rem; color: #64748b;">{{ plan_dict.meals.breakfast.portion_size }} &bull; {{ plan_dict.meals.breakfast.calories }} kcal</div>
+              </div>
+            {% endif %}
+
+            {% if plan_dict.meals and plan_dict.meals.lunch %}
+              <div style="padding: 10px 14px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #16a34a;">
+                <div style="font-size: 0.9rem; font-weight: 700; color: #16a34a; text-transform: uppercase;">☀️ Lunch</div>
+                <div style="font-size: 1.15rem; font-weight: 800;">{{ plan_dict.meals.lunch.name }}</div>
+                <div style="font-size: 0.95rem; color: #64748b;">{{ plan_dict.meals.lunch.portion_size }} &bull; {{ plan_dict.meals.lunch.calories }} kcal</div>
+              </div>
+            {% endif %}
+
+            {% if plan_dict.meals and plan_dict.meals.dinner %}
+              <div style="padding: 10px 14px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #d97706;">
+                <div style="font-size: 0.9rem; font-weight: 700; color: #d97706; text-transform: uppercase;">🌙 Dinner</div>
+                <div style="font-size: 1.15rem; font-weight: 800;">{{ plan_dict.meals.dinner.name }}</div>
+                <div style="font-size: 0.95rem; color: #64748b;">{{ plan_dict.meals.dinner.portion_size }} &bull; {{ plan_dict.meals.dinner.calories }} kcal</div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="margin-top: 16px; pt-2; border-top: 1px solid var(--color-border-subtle); display: flex; gap: 10px;">
+          <form method="POST" action="{{ url_for('diet.generate') }}" style="flex: 1;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-secondary btn-block" style="font-size: 1rem; min-height: 46px;">
+              🔄 Regenerate Meals
+            </button>
+          </form>
+          <a href="{{ url_for('diet.index') }}" class="btn btn-primary" style="flex: 1; font-size: 1rem; min-height: 46px;">
+            Explore All 4 Meals
+          </a>
+        </div>
+      {% else %}
+        <div style="text-align: center; padding: 24px; flex: 1;">
+          <span style="font-size: 2.5rem;" aria-hidden="true">🥗</span>
+          <p style="font-size: 1.1rem; color: var(--color-text-muted); margin: 10px 0;">
+            No meal plan generated for today yet.
+          </p>
+          <a href="{{ url_for('diet.index') }}" class="btn btn-primary btn-block">
+            Generate Today's Meal Plan
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT: HYDRATION TRACKER & EMERGENCY CONTACTS -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      
+      <!-- Hydration Card -->
+      <div id="hydration-tracker-card" class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h2 class="card-title" style="margin: 0; font-size: 1.35rem; color: #0284c7;">
+            💧 Senior Hydration Tracker
+          </h2>
+          <span id="water-count-display" style="font-weight: 800; font-size: 1.1rem; color: #0284c7;">
+            0 of 8 Glasses
+          </span>
+        </div>
+        <p style="font-size: 0.98rem; color: var(--color-text-muted); margin-bottom: 12px;">
+          Seniors naturally have a reduced sensation of thirst. Regular water intake prevents dehydration, dizziness, and kidney strain.
+        </p>
+
+        <!-- Progress Bar -->
+        <div style="background-color: #e2e8f0; border-radius: 9999px; height: 26px; overflow: hidden; margin-bottom: 16px;">
+          <div id="water-progress-fill" style="background-color: #0284c7; width: 0%; height: 100%; color: #ffffff; text-align: center; font-size: 0.9rem; font-weight: 800; line-height: 26px; transition: width 0.3s ease;">
+            0%
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display: flex; gap: 10px;">
+          <button id="btn-log-water" type="button" class="btn btn-primary" style="flex: 2; font-size: 1.1rem; min-height: 48px;">
+            🥤 +1 Glass of Water Logged
+          </button>
+          <button id="btn-reset-water" type="button" class="btn btn-secondary" style="flex: 1; font-size: 0.95rem; min-height: 48px;" title="Reset daily glass counter">
+            Reset
+          </button>
+        </div>
+
+        <div style="margin-top: 12px;">
+          <button id="btn-enable-notifications" type="button" class="btn btn-secondary btn-block" style="font-size: 0.95rem; min-height: 40px;">
+            🔔 Enable Browser Reminders
+          </button>
+        </div>
+      </div>
+
+      <!-- Emergency Contacts Summary Card -->
+      <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h2 class="card-title" style="margin: 0; font-size: 1.35rem;">
+            📞 Emergency Contacts ({{ contacts_count }})
+          </h2>
+          <a href="{{ url_for('contacts.index') }}" class="btn btn-secondary" style="font-size: 0.95rem; padding: 6px 14px; min-height: 40px;">
+            Manage ➔
+          </a>
+        </div>
+
+        {% if primary_contact %}
+          <div style="background-color: #f0fdf4; border: 2px solid #bbf7d0; padding: 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem; font-weight: 800; color: #166534;">
+                  {{ primary_contact.name }}
+                </span>
+                <span style="background-color: #16a34a; color: #ffffff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 999px;">PRIMARY</span>
+              </div>
+              <div style="font-size: 0.95rem; color: #14532d; margin-top: 2px;">
+                {{ primary_contact.relationship }} &bull; {{ primary_contact.phone }}
+              </div>
+            </div>
+            <a href="tel:{{ primary_contact.phone }}" class="btn btn-success" style="font-size: 1rem; padding: 8px 16px; min-height: 44px;">
+              📞 Call Now
+            </a>
+          </div>
+        {% else %}
+          <div style="background-color: #fff4e6; border: 2px dashed #f59f00; padding: 14px; border-radius: 8px; text-align: center;">
+            <p style="font-size: 1.05rem; color: #743400; margin-bottom: 8px;">
+              ⚠️ No primary contact registered yet!
+            </p>
+            <a href="{{ url_for('contacts.index') }}" class="btn btn-primary" style="font-size: 1rem;">
+              ➕ Add Emergency Contact
+            </a>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 3. CAREGIVER & SUPPORT GUIDANCE SECTION -->
+  <div class="card" style="background: #faf5ff; border: 2px solid #e9d5ff;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+      <span style="font-size: 2rem;" aria-hidden="true">🤝</span>
+      <div>
+        <h2 style="font-size: 1.45rem; font-weight: 800; color: #581c87; margin: 0;">
+          Caregiver & Family Support Center
+        </h2>
+        <p style="font-size: 1rem; color: #6b21a8; margin: 0;">
+          Essential checklist for sons, daughters, and home caregivers assisting living-alone seniors.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid-3" style="gap: 16px; margin-top: 16px;">
+      <div style="background: #ffffff; padding: 16px; border-radius: 10px; border: 1px solid #d8b4fe;">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: #6b21a8; margin-bottom: 6px;">1. Connect Telegram Bot</h3>
+        <p style="font-size: 0.98rem; color: var(--color-text-main); line-height: 1.5;">
+          Add your numeric Telegram ID in <strong>Contacts</strong> so you receive instant emergency buzzer notifications with live GPS pins.
+        </p>
+      </div>
+
+      <div style="background: #ffffff; padding: 16px; border-radius: 10px; border: 1px solid #d8b4fe;">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: #6b21a8; margin-bottom: 6px;">2. Keep Phone on Speed Dial</h3>
+        <p style="font-size: 0.98rem; color: var(--color-text-main); line-height: 1.5;">
+          Remind the senior citizen that <strong>Dial 112</strong> is available on any phone keypad even if the app or internet is offline.
+        </p>
+      </div>
+
+      <div style="background: #ffffff; padding: 16px; border-radius: 10px; border: 1px solid #d8b4fe;">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: #6b21a8; margin-bottom: 6px;">3. Set Allergen Restrictions</h3>
+        <p style="font-size: 0.98rem; color: var(--color-text-main); line-height: 1.5;">
+          Check the senior's <strong>Profile Settings</strong> to ensure known allergies, disliked ingredients, and doctor's salt limits are recorded.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. RECENT ALERTS AUDIT PREVIEW -->
+  {% if recent_alerts %}
+    <div class="card" style="margin-top: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 class="card-title" style="margin: 0; font-size: 1.35rem;">
+          📜 Recent SOS Alert Activity
+        </h2>
+        <a href="{{ url_for('sos.history') }}" class="btn btn-secondary" style="font-size: 0.95rem; padding: 6px 14px; min-height: 40px;">
+          Full Log ➔
+        </a>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for a in recent_alerts %}
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--color-border-subtle); flex-wrap: wrap; gap: 8px;">
+            <div>
+              <strong>Alert #{{ a.id }}</strong> &bull;
+              <span style="color: var(--color-text-muted); font-size: 0.95rem;">{{ a.created_at.strftime('%d-%b-%Y at %I:%M %p') }}</span>
+              <span class="mode-badge {% if a.mode == 'test' %}test{% else %}live{% endif %}" style="font-size: 0.75rem; margin-left: 6px;">{{ a.mode | upper }}</span>
+            </div>
+            <div>
+              {% if a.overall_status == 'sent' %}
+                <span style="color: var(--color-success); font-weight: 800;">ALL SENT ✅</span>
+              {% elif a.overall_status == 'partial' %}
+                <span style="color: var(--color-warning); font-weight: 800;">PARTIAL ⚠️</span>
+              {% else %}
+                <span style="color: var(--color-emergency); font-weight: 800;">FAILED ❌</span>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- 5-Second Countdown Modal Overlay (for dashboard button) -->
+<div id="sos-countdown-overlay" class="countdown-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="countdown-heading-dash">
+  <div class="countdown-box">
+    <h2 id="countdown-heading-dash" style="color: var(--color-emergency); font-size: 1.8rem; font-weight: 900; margin-bottom: 8px;">
+      🚨 SENDING EMERGENCY ALERT IN:
+    </h2>
+    <p style="font-size: 1.15rem; color: #334e68;">
+      Accidental press? Tap CANCEL below before the timer reaches 0.
+    </p>
+
+    <div class="countdown-timer-circle" id="sos-timer-count" aria-live="assertive">
+      5
+    </div>
+
+    <button id="sos-cancel-btn" class="btn-cancel-sos" type="button">
+      🛑 CANCEL ALERT (False Alarm)
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/sos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/reminders.js') }}"></script>
+{% endblock %}

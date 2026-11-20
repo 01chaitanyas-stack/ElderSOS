@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile & Diet Settings - ElderSOS{% endblock %}
+
+{% block content %}
+<div style="max-width: 820px; margin: 0 auto;">
+  <div style="margin-bottom: 24px;">
+    <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--color-text-main); margin-bottom: 6px;">
+      ⚙️ Profile, Health & Dietary Settings
+    </h1>
+    <p style="font-size: 1.15rem; color: var(--color-text-muted);">
+      Customize your dietary restrictions, allergen exclusions, and hydration reminders.
+    </p>
+  </div>
+
+  <form method="POST" action="{{ url_for('profile.index') }}" novalidate>
+    {{ form.hidden_tag() }}
+
+    <!-- 1. Senior Personal Information -->
+    <div class="card">
+      <h2 class="card-title" style="font-size: 1.35rem; color: var(--color-primary);">
+        👤 1. Senior Citizen Details
+      </h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="name" class="form-label">Full Name</label>
+          {{ form.name(class="form-control", id="name", required=true) }}
+          {% for error in form.name.errors %}
+            <span class="form-error">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="age" class="form-label">Age (Years)</label>
+          {{ form.age(class="form-control", id="age", type="number", min="50", max="120", required=true) }}
+          {% for error in form.age.errors %}
+            <span class="form-error">{{ error }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Diet & Food Preferences -->
+    <div class="card">
+      <h2 class="card-title" style="font-size: 1.35rem; color: var(--color-primary);">
+        🥗 2. Dietary Category & Food Exclusions
+      </h2>
+      
+      <div class="form-group">
+        <label for="diet_type" class="form-label">Dietary Classification</label>
+        {{ form.diet_type(class="form-control", id="diet_type") }}
+        {% for error in form.diet_type.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="allergies" class="form-label">🚫 Food Allergies (Comma-separated)</label>
+        <div class="form-hint">
+          Meals with these ingredients will be <strong>strictly excluded</strong> from your plan (e.g. <code>dairy, gluten, peanuts, mustard, eggs, fish, soy, sesame</code>).
+        </div>
+        {{ form.allergies(class="form-control", id="allergies", placeholder="e.g. dairy, mustard, peanuts") }}
+        {% for error in form.allergies.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="dislikes" class="form-label">👎 Disliked Foods or Ingredients (Comma-separated)</label>
+        <div class="form-hint">Foods you prefer not to eat (e.g. <code>papaya, bitter gourd, karela, brinjal</code>).</div>
+        {{ form.dislikes(class="form-control", id="dislikes", placeholder="e.g. papaya, bitter gourd") }}
+        {% for error in form.dislikes.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="restrictions" class="form-label">🥣 Special Dietary Restrictions</label>
+        <div class="form-hint">Options: <code>low-sodium</code>, <code>soft-food</code> (easy to chew), <code>diabetic-friendly</code>.</div>
+        {{ form.restrictions(class="form-control", id="restrictions", placeholder="e.g. low-sodium, soft-food") }}
+        {% for error in form.restrictions.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- 3. Clinical & Medical Notes -->
+    <div class="card" style="border-left: 6px solid #f59f00;">
+      <h2 class="card-title" style="font-size: 1.35rem; color: #b45309;">
+        ⚕️ 3. Clinical & Doctor Guidance
+      </h2>
+      <p class="card-subtitle">
+        ElderSOS never replaces a doctor's care. Recording diagnosed conditions helps the system display essential health precautions.
+      </p>
+
+      <div class="form-group">
+        <label for="conditions_note" class="form-label">Diagnosed Medical Conditions</label>
+        <div class="form-hint">e.g. Type 2 Diabetes, High Blood Pressure, Kidney Disease, Arthritis.</div>
+        {{ form.conditions_note(class="form-control", id="conditions_note", rows="2", placeholder="e.g. Type 2 Diabetes, Mild Hypertension") }}
+      </div>
+
+      <div class="form-group">
+        <label for="clinician_note" class="form-label">Prescribed Doctor / Dietician Notes</label>
+        <div class="form-hint">Specific advice given by your consulting doctor.</div>
+        {{ form.clinician_note(class="form-control", id="clinician_note", rows="2", placeholder="e.g. Strict salt restriction under 4 grams/day; plenty of warm water.") }}
+      </div>
+    </div>
+
+    <!-- 4. Senior Reminders & Alerts -->
+    <div class="card">
+      <h2 class="card-title" style="font-size: 1.35rem; color: var(--color-primary);">
+        ⏰ 4. Daily Hydration & Meal Reminders
+      </h2>
+
+      <div class="form-group">
+        <label class="checkbox-group">
+          {{ form.water_enabled(id="water_enabled") }}
+          <span class="checkbox-label">💧 Enable Senior Hydration Reminders</span>
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-left: 36px; max-width: 340px;">
+        <label for="water_interval_min" class="form-label">Remind Me Every (Minutes):</label>
+        {{ form.water_interval_min(class="form-control", id="water_interval_min", type="number", min="15", max="240") }}
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-group">
+          {{ form.meals_enabled(id="meals_enabled") }}
+          <span class="checkbox-label">🍲 Enable Daily Meal Timing Reminders (Breakfast, Lunch, Snacks, Dinner)</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div style="margin: 28px 0;">
+      {{ form.submit(class="btn btn-primary btn-block", style="min-height: 60px; font-size: 1.3rem;") }}
+    </div>
+  </form>
+</div>
+{% endblock %}

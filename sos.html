@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency SOS Assistance - ElderSOS{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 0 auto;">
+  <!-- Header Title -->
+  <div style="text-align: center; margin-bottom: 24px;">
+    <h1 style="font-size: 2.3rem; font-weight: 900; color: var(--color-emergency); margin-bottom: 6px;">
+      🚨 One-Touch Emergency SOS
+    </h1>
+    <p style="font-size: 1.2rem; color: var(--color-text-muted);">
+      Press the big red button below in any urgent health, fall, or safety situation.
+    </p>
+  </div>
+
+  <!-- Giant SOS Card -->
+  <div class="sos-hero-card">
+    <button id="sos-trigger-btn" class="sos-trigger-btn" type="button" aria-label="Trigger Emergency SOS Alert">
+      <span class="sos-icon" aria-hidden="true">🆘</span>
+      <span>SOS</span>
+      <span class="sos-subtext">Press for Help</span>
+    </button>
+
+    <div style="margin-top: 16px;">
+      <p style="font-size: 1.15rem; font-weight: 700; color: var(--color-text-main);">
+        Tapping initiates a 5-second countdown to prevent accidental alerts.
+      </p>
+      <div id="sos-status-feedback" style="display: none; font-size: 1.15rem; font-weight: 800; color: var(--color-emergency); margin-top: 10px;">
+        Acquiring GPS location and sending emergency alerts...
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-time Response & Honest Delivery Status Card -->
+  <div id="sos-results-card" class="card" style="display: none; border-width: 3px;">
+    <h2 class="card-title" style="font-size: 1.5rem;">
+      📡 Emergency Alert Dispatch Results
+    </h2>
+    <div id="sos-results-content">
+      <!-- Dynamic per-contact status injected by sos.js -->
+    </div>
+  </div>
+
+  <!-- Immediate Direct Telephone Shortcuts -->
+  <div class="card" style="background-color: #f8fafc; border: 2px solid var(--color-border);">
+    <h3 class="card-title" style="font-size: 1.3rem;">
+      📞 Instant Phone Call Shortcuts (Direct Dial)
+    </h3>
+    <p class="card-subtitle">
+      Tap these buttons anytime to dial using your phone's cellular network without waiting for messages.
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <!-- 112 National Helpline -->
+      <a href="tel:112" class="btn btn-emergency btn-block" style="font-size: 1.35rem; padding: 16px; justify-content: space-between;">
+        <span>🚨 National Emergency (Police & Ambulance)</span>
+        <span style="font-weight: 900;">Dial 112 ➔</span>
+      </a>
+
+      <!-- Primary Contact Call -->
+      {% if primary_contact %}
+        <a href="tel:{{ primary_contact.phone }}" class="btn btn-success btn-block" style="font-size: 1.25rem; padding: 14px; justify-content: space-between;">
+          <span>📞 Primary Caregiver: {{ primary_contact.name }} ({{ primary_contact.relationship }})</span>
+          <span style="font-weight: 800;">Call {{ primary_contact.phone }} ➔</span>
+        </a>
+      {% else %}
+        <div style="padding: 12px; background: #fff4e6; border: 2px dashed #f59f00; border-radius: 8px;">
+          <p style="font-size: 1.05rem; color: #743400; margin-bottom: 8px;">
+            ⚠️ You have not set a Primary Emergency Contact yet.
+          </p>
+          <a href="{{ url_for('contacts.index') }}" class="btn btn-secondary" style="font-size: 1rem;">
+            ➕ Add Emergency Contact Now
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+    <div style="margin-top: 20px; text-align: center;">
+      <a href="{{ url_for('sos.history') }}" class="btn btn-secondary" style="font-size: 1.05rem;">
+        📜 View Past Alert History Log
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- 5-Second Countdown Modal Overlay -->
+<div id="sos-countdown-overlay" class="countdown-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="countdown-heading">
+  <div class="countdown-box">
+    <h2 id="countdown-heading" style="color: var(--color-emergency); font-size: 1.8rem; font-weight: 900; margin-bottom: 8px;">
+      🚨 SENDING EMERGENCY ALERT IN:
+    </h2>
+    <p style="font-size: 1.15rem; color: #334e68;">
+      Accidental press? Tap CANCEL below before the timer reaches 0.
+    </p>
+
+    <div class="countdown-timer-circle" id="sos-timer-count" aria-live="assertive">
+      5
+    </div>
+
+    <button id="sos-cancel-btn" class="btn-cancel-sos" type="button">
+      🛑 CANCEL ALERT (False Alarm)
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/sos.js') }}"></script>
+{% endblock %}

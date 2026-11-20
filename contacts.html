@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Contacts - ElderSOS{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-text-main); margin-bottom: 8px;">
+    👥 Emergency Contacts & Caregivers
+  </h1>
+  <p style="font-size: 1.15rem; color: var(--color-text-muted);">
+    These are the family members, doctors, and neighbors who will be alerted instantly when you tap the Emergency SOS button.
+  </p>
+</div>
+
+<div class="grid-2" style="align-items: start;">
+  <!-- Left Column: Add / Edit Contact Form -->
+  <div class="card" style="position: sticky; top: 90px;">
+    <h2 class="card-title" style="font-size: 1.45rem;">
+      {% if edit_contact %}
+        ✏️ Edit Contact: {{ edit_contact.name }}
+      {% else %}
+        ➕ Add New Emergency Contact
+      {% endif %}
+    </h2>
+    <p class="card-subtitle">
+      {% if edit_contact %}
+        Modify phone number, relationship or Telegram chat ID.
+      {% else %}
+        Add a trusted family member, neighbor, or caregiver.
+      {% endif %}
+    </p>
+
+    <form method="POST" action="{{ url_for('contacts.edit', contact_id=edit_contact.id) if edit_contact else url_for('contacts.add') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        <label for="name" class="form-label">👤 Full Name</label>
+        {{ form.name(class="form-control", id="name", placeholder="e.g. Rahul Sharma", required=true) }}
+        {% for error in form.name.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="relationship" class="form-label">🤝 Relationship</label>
+        {{ form.relationship(class="form-control", id="relationship") }}
+        {% for error in form.relationship.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="phone" class="form-label">📞 Phone Number (with Country Code)</label>
+        <div class="form-hint">Used for 1-tap direct emergency phone calls.</div>
+        {{ form.phone(class="form-control", id="phone", placeholder="e.g. +91 98765 43210", type="tel", required=true) }}
+        {% for error in form.phone.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="telegram_chat_id" class="form-label">💬 Telegram Chat ID (Optional for Live Alerts)</label>
+        <div class="form-hint">Numeric ID from Telegram (e.g. 987654321). See guide below.</div>
+        {{ form.telegram_chat_id(class="form-control", id="telegram_chat_id", placeholder="e.g. 123456789") }}
+        {% for error in form.telegram_chat_id.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-group">
+          {{ form.is_primary(id="is_primary") }}
+          <span class="checkbox-label">⭐ Set as Primary Emergency Contact</span>
+        </label>
+        <div class="form-hint" style="margin-left: 36px;">
+          Primary contacts appear prominently on your dashboard for immediate 1-tap calling.
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        {{ form.submit(class="btn btn-primary", style="flex: 1;") }}
+        {% if edit_contact %}
+          <a href="{{ url_for('contacts.index') }}" class="btn btn-secondary">Cancel</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Right Column: List of Existing Contacts & Helper Guide -->
+  <div>
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 class="card-title" style="margin-bottom: 0;">
+          📋 Registered Contacts ({{ contacts | length }})
+        </h2>
+      </div>
+
+      {% if contacts %}
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          {% for contact in contacts %}
+            <div class="card" style="margin-bottom: 0; border: 2px solid {% if contact.is_primary %}var(--color-primary){% else %}var(--color-border){% endif %}; background-color: {% if contact.is_primary %}#f8fcff{% else %}#ffffff{% endif %};">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--color-text-main);">
+                      {{ contact.name }}
+                    </h3>
+                    {% if contact.is_primary %}
+                      <span style="background-color: var(--color-primary); color: #ffffff; font-size: 0.85rem; font-weight: 800; padding: 4px 10px; border-radius: var(--border-radius-pill);">
+                        ⭐ PRIMARY CONTACT
+                      </span>
+                    {% endif %}
+                  </div>
+                  <div style="font-size: 1.05rem; font-weight: 600; color: var(--color-text-muted); margin-top: 4px;">
+                    Relationship: <strong>{{ contact.relationship }}</strong>
+                  </div>
+                </div>
+
+                <!-- 1-Tap Direct Call Button -->
+                <a href="tel:{{ contact.phone }}" class="btn btn-success" style="padding: 10px 18px; font-size: 1.1rem; text-decoration: none;">
+                  📞 Call Now
+                </a>
+              </div>
+
+              <!-- Contact Info Details -->
+              <div style="margin: 16px 0; padding: 12px; background-color: #f1f5f9; border-radius: var(--border-radius-sm); font-size: 1.05rem;">
+                <div>📱 <strong>Phone:</strong> {{ contact.phone }}</div>
+                <div style="margin-top: 6px;">
+                  💬 <strong>Telegram Alert:</strong>
+                  {% if contact.telegram_chat_id %}
+                    <span style="color: var(--color-success); font-weight: 700;">✅ Connected (ID: {{ contact.telegram_chat_id }})</span>
+                  {% else %}
+                    <span style="color: var(--color-warning); font-weight: 600;">⚠️ Not configured (Console / Phone only)</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Card Action Buttons -->
+              <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; align-items: center; border-top: 1px solid var(--color-border-subtle); padding-top: 12px;">
+                {% if not contact.is_primary %}
+                  <form method="POST" action="{{ url_for('contacts.make_primary', contact_id=contact.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-secondary" style="min-height: 44px; padding: 6px 14px; font-size: 0.95rem;">
+                      ⭐ Make Primary
+                    </button>
+                  </form>
+                {% endif %}
+
+                <a href="{{ url_for('contacts.edit', contact_id=contact.id) }}" class="btn btn-secondary" style="min-height: 44px; padding: 6px 14px; font-size: 0.95rem;">
+                  ✏️ Edit
+                </a>
+
+                <form method="POST" action="{{ url_for('contacts.delete', contact_id=contact.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to remove {{ contact.name }} from your emergency contacts?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-outline-emergency" style="min-height: 44px; padding: 6px 14px; font-size: 0.95rem;">
+                    🗑️ Delete
+                  </button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="text-align: center; padding: 40px 20px; background-color: #fff9db; border: 2px dashed #f59f00; border-radius: var(--border-radius-md);">
+          <span style="font-size: 3rem;" aria-hidden="true">⚠️</span>
+          <h3 style="font-size: 1.3rem; font-weight: 800; color: #744210; margin-top: 10px;">No Emergency Contacts Added Yet</h3>
+          <p style="font-size: 1.05rem; color: #855319; margin-top: 8px;">
+            Please add at least one family member, doctor, or caregiver using the form on the left so ElderSOS can dispatch alerts.
+          </p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Telegram Setup Guide Card -->
+    <div class="card" style="background-color: #f0fdf4; border: 2px solid #86efac;">
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: #166534; margin-bottom: 8px;">
+        🤖 How to Receive Instant Telegram Alerts
+      </h3>
+      <ol style="margin-left: 20px; font-size: 1.05rem; line-height: 1.7; color: #14532d;">
+        <li>Install Telegram on the caregiver or family member's phone.</li>
+        <li>Open Telegram and search for <strong>@userinfobot</strong>, then tap <strong>Start</strong>.</li>
+        <li>The bot replies with their numeric <strong>Id</strong> (e.g., <code>583920194</code>).</li>
+        <li>Copy that ID and paste it into the <em>Telegram Chat ID</em> field above.</li>
+        <li>ElderSOS will deliver real-time emergency SOS messages with live GPS map pins straight to their phone!</li>
+      </ol>
+    </div>
+  </div>
+</div>
+{% endblock %}

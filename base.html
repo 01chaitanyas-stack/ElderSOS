@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b69a3">
+  <meta name="description" content="ElderSOS: Emergency Assistance and Smart Diet Planner designed for senior citizens.">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  
+  <title>{% block title %}ElderSOS - Senior Care & Emergency Assistant{% endblock %}</title>
+  
+  <!-- Web App Manifest for PWA -->
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  
+  <!-- Healthcare Design System CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Top Emergency & System Status Bar -->
+  <aside class="top-notice-bar" aria-label="System mode and emergency quick dial">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <a href="tel:{{ EMERGENCY_PHONE }}" class="emergency-quick-pill" aria-label="National Emergency Ambulance and Police Number 112">
+        <span>🚨 Dial {{ EMERGENCY_PHONE }} (National Emergency)</span>
+      </a>
+      <span style="font-size: 0.95rem; opacity: 0.9;">Available 24/7 across India</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span>Alert Mode:</span>
+      {% if ALERT_MODE == 'test' %}
+        <span class="mode-badge test" title="Test Mode: Alerts are logged safely without charging or sending SMS/Bots">TEST MODE (Safe)</span>
+      {% else %}
+        <span class="mode-badge live" title="Live Mode: Real alerts will be sent via configured provider">LIVE MODE</span>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- Application Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="{{ url_for('sos.dashboard') if current_user.is_authenticated else url_for('auth.login') }}" class="brand-link" aria-label="ElderSOS Home">
+        <div class="brand-logo-icon" aria-hidden="true">🆘</div>
+        <div class="brand-text-group">
+          <span class="brand-title">ElderSOS</span>
+          <span class="brand-subtitle">Emergency Assistance & Diet Planner</span>
+        </div>
+      </a>
+
+      <nav aria-label="Main Navigation">
+        <ul class="app-nav">
+          {% if current_user.is_authenticated %}
+            <li>
+              <a href="{{ url_for('sos.dashboard') }}" class="nav-link {% if request.endpoint == 'sos.dashboard' %}active{% endif %}">
+                <span>🏠</span> Dashboard
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('sos.sos_page') }}" class="nav-link sos-nav {% if request.endpoint == 'sos.sos_page' %}active{% endif %}" style="font-weight: 800;">
+                <span>🚨</span> SOS Alert
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('diet.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('diet.') %}active{% endif %}">
+                <span>🥗</span> Diet Planner
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('contacts.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('contacts.') %}active{% endif %}">
+                <span>📞</span> Contacts
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('profile.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('profile.') %}active{% endif %}">
+                <span>⚙️</span> Profile
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('auth.logout') }}" class="nav-link" style="color: var(--color-emergency);">
+                <span>🚪</span> Sign Out
+              </a>
+            </li>
+          {% else %}
+            <li>
+              <a href="{{ url_for('auth.login') }}" class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}">
+                <span>🔑</span> Sign In
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('auth.register') }}" class="nav-link {% if request.endpoint == 'auth.register' %}active{% endif %}" style="background-color: var(--color-primary-light); color: var(--color-primary);">
+                <span>📝</span> Register New Account
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main id="main-content" class="main-wrapper" tabindex="-1">
+    <!-- Flash Messages System -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container" role="alert" aria-live="polite">
+          {% for category, message in messages %}
+            <div class="alert-banner {{ category }}">
+              <span style="font-size: 1.3rem;">
+                {% if category == 'success' %}✅
+                {% elif category == 'danger' %}⚠️
+                {% elif category == 'warning' %}🔔
+                {% else %}ℹ️{% endif %}
+              </span>
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Permanent Accessible Footer with Healthcare Notice -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div class="disclaimer-banner">
+        <div class="disclaimer-title">⚖️ Permanent Safety & Medical Notice</div>
+        <p>
+          <strong>ElderSOS is an emergency assistance and dietary planning companion for seniors and caregivers. It does NOT replace professional emergency services (Dial 112 in India) or individual clinical medical advice.</strong> In critical life-threatening situations, always dial 112 immediately or proceed to the nearest emergency room. Meal suggestions are rule-based and should be confirmed with your doctor or clinical dietician.
+        </p>
+      </div>
+      <div class="footer-bottom">
+        <div>
+          <span>&copy; ElderSOS Senior Care Project. Built for senior accessibility and loved ones' peace of mind.</span>
+        </div>
+        <div>
+          <span>Current Mode: <strong>{{ ALERT_MODE | upper }}</strong> (Provider: {{ ALERT_PROVIDER }})</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Base Application Scripts -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

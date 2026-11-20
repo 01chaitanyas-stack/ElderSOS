@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Alert History - ElderSOS{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-text-main); margin-bottom: 4px;">
+        📜 Emergency Alert History Log
+      </h1>
+      <p style="font-size: 1.1rem; color: var(--color-text-muted);">
+        Audit record of every SOS trigger and verified delivery status.
+      </p>
+    </div>
+    <a href="{{ url_for('sos.sos_page') }}" class="btn btn-emergency" style="font-size: 1.1rem; padding: 10px 20px;">
+      🚨 Trigger SOS
+    </a>
+  </div>
+
+  {% if alerts %}
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      {% for alert in alerts %}
+        <div class="card" style="border-left: 8px solid {% if alert.overall_status == 'sent' %}var(--color-success){% elif alert.overall_status == 'partial' %}var(--color-warning){% else %}var(--color-emergency){% endif %};">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-size: 1.25rem; font-weight: 800; color: var(--color-text-main);">
+                  Alert #{{ alert.id }}
+                </span>
+                
+                <!-- Status Badge -->
+                {% if alert.overall_status == 'sent' %}
+                  <span style="background-color: var(--color-success); color: #ffffff; padding: 4px 12px; border-radius: var(--border-radius-pill); font-weight: 800; font-size: 0.85rem;">
+                    ALL SENT ✅
+                  </span>
+                {% elif alert.overall_status == 'partial' %}
+                  <span style="background-color: var(--color-warning); color: #ffffff; padding: 4px 12px; border-radius: var(--border-radius-pill); font-weight: 800; font-size: 0.85rem;">
+                    PARTIAL ⚠️
+                  </span>
+                {% else %}
+                  <span style="background-color: var(--color-emergency); color: #ffffff; padding: 4px 12px; border-radius: var(--border-radius-pill); font-weight: 800; font-size: 0.85rem;">
+                    FAILED ❌
+                  </span>
+                {% endif %}
+
+                <!-- Mode Badge -->
+                {% if alert.mode == 'test' %}
+                  <span class="mode-badge test">TEST SIMULATION</span>
+                {% else %}
+                  <span class="mode-badge live">LIVE ALERT</span>
+                {% endif %}
+              </div>
+
+              <div style="font-size: 1rem; color: var(--color-text-muted); margin-top: 6px;">
+                ⏰ {{ alert.created_at.strftime('%A, %d %B %Y at %I:%M:%S %p UTC') }}
+              </div>
+            </div>
+
+            <!-- GPS Link -->
+            <div>
+              {% if alert.lat and alert.lng %}
+                <a href="{{ alert.get_maps_link() }}" target="_blank" rel="noopener" class="btn btn-secondary" style="font-size: 0.95rem; padding: 8px 14px;">
+                  📍 Open Map Pin
+                </a>
+              {% else %}
+                <span style="font-size: 0.95rem; color: var(--color-text-muted); background: #f1f5f9; padding: 6px 12px; border-radius: 6px;">
+                  Location: {{ alert.location_status | capitalize }}
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Message Payload -->
+          <div style="background-color: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--color-border-subtle); margin: 12px 0; font-size: 1.05rem;">
+            <strong>Message:</strong> {{ alert.message }}
+          </div>
+
+          <!-- Per-contact Deliveries breakdown -->
+          <div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; color: var(--color-text-main);">
+              Recipients & Delivery Confirmations:
+            </h4>
+            {% if alert.deliveries %}
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                {% for d in alert.deliveries %}
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 6px; background-color: {% if d.status == 'sent' %}#f0fdf4{% else %}#fef2f2{% endif %}; border: 1px solid {% if d.status == 'sent' %}#bbf7d0{% else %}#fecaca{% endif %}; font-size: 0.98rem; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                      <strong>{{ d.contact.name if d.contact else "Deleted Contact" }}</strong>
+                      <span style="color: var(--color-text-muted);">({{ d.provider | upper }})</span>
+                    </div>
+                    <div>
+                      {% if d.status == 'sent' %}
+                        <span style="color: var(--color-success); font-weight: 700;">Delivered ✅</span>
+                        {% if d.provider_ref %}<span style="color: #64748b; font-size: 0.85rem;">(Ref: {{ d.provider_ref }})</span>{% endif %}
+                      {% else %}
+                        <span style="color: var(--color-emergency); font-weight: 700;">Failed ❌</span>
+                        {% if d.error %}<span style="color: #991b1b; font-size: 0.85rem;">- {{ d.error }}</span>{% endif %}
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p style="font-size: 0.95rem; color: var(--color-text-muted);">No delivery records found for this alert.</p>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 48px 24px;">
+      <span style="font-size: 3rem;" aria-hidden="true">🛡️</span>
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-top: 12px;">No SOS Alerts Triggered Yet</h2>
+      <p style="font-size: 1.1rem; color: var(--color-text-muted); margin-top: 8px;">
+        When an emergency alert is triggered, detailed delivery logs with GPS coordinates and provider responses will appear here.
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

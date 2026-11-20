@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Register Senior Account - ElderSOS{% endblock %}
+
+{% block content %}
+<div style="max-width: 620px; margin: 30px auto;">
+  <div class="card">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <span style="font-size: 3rem;" aria-hidden="true">👵👴</span>
+      <h1 class="card-title" style="justify-content: center; font-size: 1.8rem; margin-top: 8px;">
+        Register for ElderSOS
+      </h1>
+      <p class="card-subtitle">
+        Create an account to setup one-touch SOS alerts and healthy, personalized senior meal plans.
+      </p>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        <label for="name" class="form-label">
+          👤 Full Name
+        </label>
+        <div class="form-hint">Enter your name or the senior citizen's name.</div>
+        {{ form.name(class="form-control", id="name", placeholder="e.g. Ramesh Chandra Sharma", autocomplete="name", required=true) }}
+        {% for error in form.name.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="email" class="form-label">
+            📧 Email Address
+          </label>
+          {{ form.email(class="form-control", id="email", placeholder="senior@example.com", autocomplete="email", required=true) }}
+          {% for error in form.email.errors %}
+            <span class="form-error">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="age" class="form-label">
+            🎂 Age (Years)
+          </label>
+          {{ form.age(class="form-control", id="age", placeholder="e.g. 72", type="number", min="50", max="120", required=true) }}
+          {% for error in form.age.errors %}
+            <span class="form-error">{{ error }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="password" class="form-label">
+            🔒 Choose Password
+          </label>
+          <div class="form-hint">At least 6 characters.</div>
+          {{ form.password(class="form-control", id="password", placeholder="Create password", autocomplete="new-password", required=true) }}
+          {% for error in form.password.errors %}
+            <span class="form-error">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="confirm_password" class="form-label">
+            🔒 Confirm Password
+          </label>
+          <div class="form-hint">Type the same password again.</div>
+          {{ form.confirm_password(class="form-control", id="confirm_password", placeholder="Re-enter password", autocomplete="new-password", required=true) }}
+          {% for error in form.confirm_password.errors %}
+            <span class="form-error">{{ error }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="margin-top: 24px;">
+        {{ form.submit(class="btn btn-primary btn-block", style="min-height: 58px; font-size: 1.25rem;") }}
+      </div>
+    </form>
+
+    <div style="margin-top: 24px; padding-top: 20px; border-top: 2px solid var(--color-border-subtle); text-align: center;">
+      <p style="font-size: 1.1rem; margin-bottom: 12px;">Already have an ElderSOS account?</p>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-block">
+        Sign In Here
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
